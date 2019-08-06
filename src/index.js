@@ -26,7 +26,8 @@ const OPERATORS = {
   ilike: '$ilike',
   notILike: '$notILike',
   or: '$or',
-  and: '$and'
+  and: '$and',
+  match: '$match'
 };
 
 const OPERATORS_MAP = {
@@ -48,7 +49,8 @@ const OPERATORS_MAP = {
   $containsKey: '?',
   $contained: '<@',
   $any: '?|',
-  $all: '?&'
+  $all: '?&',
+  $match: '@@'
 };
 
 const RANGE_OPERATORS = [
@@ -69,7 +71,7 @@ const RANGE_OPERATORS = [
  * @param {string} options.allowedEager - Objection eager loading string.
  */
 class Service extends AdapterService {
-  constructor (options) {
+  constructor(options) {
     if (!options.model) {
       throw new errors.GeneralError('You must provide an Objection Model');
     }
@@ -93,11 +95,11 @@ class Service extends AdapterService {
     this.upsertGraphOptions = options.upsertGraphOptions;
   }
 
-  get Model () {
+  get Model() {
     return this.options.model;
   }
 
-  getModel (params) {
+  getModel(params) {
     return this.options.model;
   }
 
@@ -107,7 +109,7 @@ class Service extends AdapterService {
    * @param idList
    * @param addTableName
    */
-  getIdsQuery (id, idList, addTableName = true) {
+  getIdsQuery(id, idList, addTableName = true) {
     const query = {};
 
     if (Array.isArray(this.id)) {
@@ -146,7 +148,7 @@ class Service extends AdapterService {
    * @param parentKey
    * @param methodKey
    */
-  objectify (query, params, parentKey, methodKey) {
+  objectify(query, params, parentKey, methodKey) {
     if (params.$eager) { delete params.$eager; }
     if (params.$joinEager) { delete params.$joinEager; }
     if (params.$joinRelation) { delete params.$joinRelation; }
@@ -220,12 +222,12 @@ class Service extends AdapterService {
     });
   }
 
-  _createQuery (params = {}) {
+  _createQuery(params = {}) {
     let trx = params.transaction ? params.transaction.trx : null;
     return this.Model.query(trx);
   }
 
-  createQuery (params = {}) {
+  createQuery(params = {}) {
     const { filters, query } = this.filterQuery(params);
     let q = this._createQuery(params)
       .skipUndefined()
@@ -295,7 +297,7 @@ class Service extends AdapterService {
    * `find` service function for Objection.
    * @param params
    */
-  _find (params) {
+  _find(params) {
     const find = (params, count, filters, query) => {
       const q = params.objection || this.createQuery(params);
 
@@ -360,7 +362,7 @@ class Service extends AdapterService {
     return result;
   }
 
-  _get (id, params) {
+  _get(id, params) {
     const query = Object.assign({}, params.query, this.getIdsQuery(id));
 
     return this._find(Object.assign({}, params, { query }))
@@ -380,7 +382,7 @@ class Service extends AdapterService {
    * @param {object} data
    * @param {object} params
    */
-  _create (data, params) {
+  _create(data, params) {
     const create = (data, params) => {
       let q = this._createQuery(params);
 
@@ -427,7 +429,7 @@ class Service extends AdapterService {
    * @param data
    * @param params
    */
-  _update (id, data, params) {
+  _update(id, data, params) {
     // NOTE (EK): First fetch the old record so
     // that we can fill any existing keys that the
     // client isn't updating with null;
@@ -480,7 +482,7 @@ class Service extends AdapterService {
    * @param data
    * @param params
    */
-  _patch (id, data, params) {
+  _patch(id, data, params) {
     let { filters, query } = this.filterQuery(params);
 
     if (this.allowedUpsert && id !== null) {
@@ -556,7 +558,7 @@ class Service extends AdapterService {
    * @param id
    * @param params
    */
-  _remove (id, params) {
+  _remove(id, params) {
     params.query = Object.assign({}, params.query);
 
     // NOTE (EK): First fetch the record so that we can return
@@ -595,7 +597,7 @@ class Service extends AdapterService {
   }
 }
 
-export default function init (options) {
+export default function init(options) {
   return new Service(options);
 }
 
